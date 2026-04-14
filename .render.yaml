@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: pwa-builder-backend
+    env: node
+    plan: free
+    region: oregon
+    root: src
+    buildCommand: npm install
+    startCommand: npm start
