@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "buildCommand": "npm install",
+  "public": "public",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/src/server.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/public/index.html"
+    }
+  ]
+}
