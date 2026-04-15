@@ -2,14 +2,22 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
-app.use(cors()); // Allows your React app to talk to this server
+app.use(cors({
+  origin: '*', // Allows requests from any frontend
+  methods: ['POST', 'GET']
+}));
 app.use(express.json());
+
+// Add a simple test route to verify connection
+app.get('/api/test', (req, res) => {
+  res.json({ status: 'Backend is connected!' });
+});
 
 app.post('/api/build', async (req, res) => {
   const { appName, packageName, webUrl } = req.body;
 
   // Trigger the GitHub Action in your 'pwa-native-shell' repo
-  const response = await fetch(`https://api.github.com/repos/YOUR_GITHUB_USERNAME/pwa-native-shell/dispatches`, {
+  const response = await fetch(`https://api.github.com/repos/mellowgameshere/pwa-native-shell/dispatches`, {
     method: 'POST',
     headers: {
       'Authorization': `token ${process.env.GITHUB_TOKEN}`,

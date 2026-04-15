@@ -4,6 +4,5 @@ services:
     env: node
     plan: free
     region: oregon
-    root: src
     buildCommand: npm install
     startCommand: npm start
