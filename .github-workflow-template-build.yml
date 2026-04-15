@@ -1,0 +1,66 @@
+name: Build PWA
+
+on:
+  repository_dispatch:
+    types: [build-request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+      
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v2
+      
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+      
+      - name: Build APK with Gradle
+        run: ./gradlew assembleRelease
+        env:
+          APP_NAME: ${{ github.event.client_payload.appName }}
+          PACKAGE_NAME: ${{ github.event.client_payload.packageName }}
+          WEB_URL: ${{ github.event.client_payload.webUrl }}
+      
+      - name: Find APK file
+        id: find_apk
+        run: |
+          APK_PATH=$(find . -name "*.apk" -type f | head -1)
+          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+          echo "APK found at: $APK_PATH"
+      
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: release-${{ github.run_number }}
+          release_name: Build ${{ github.event.client_payload.appName }} - ${{ github.run_number }}
+          body: |
+            **App Details:**
+            - **App Name:** ${{ github.event.client_payload.appName }}
+            - **Package Name:** ${{ github.event.client_payload.packageName }}
+            - **Web URL:** ${{ github.event.client_payload.webUrl }}
+            - **Build Number:** ${{ github.run_number }}
+          draft: false
+          prerelease: false
+      
+      - name: Upload APK Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.find_apk.outputs.apk_path }}
+          asset_name: ${{ github.event.client_payload.appName }}-${{ github.run_number }}.apk
+          asset_content_type: application/vnd.android.package-archive

@@ -168,12 +168,14 @@
     </form>
 
     <div id="message" class="message"></div>
+    <div id="details" style="margin-top: 15px; padding: 10px; background: #f5f5f5; border-radius: 5px; font-size: 12px; color: #666; display: none; max-height: 200px; overflow-y: auto;"></div>
     <div id="status" class="status"></div>
   </div>
 
   <script>
     const form = document.getElementById('buildForm');
     const messageDiv = document.getElementById('message');
+    const detailsDiv = document.getElementById('details');
     const statusDiv = document.getElementById('status');
     const submitBtn = document.getElementById('submitBtn');
 
@@ -184,9 +186,17 @@
       const packageName = document.getElementById('packageName').value;
       const webUrl = document.getElementById('webUrl').value;
 
+      // Validate inputs
+      if (!appName.trim() || !packageName.trim() || !webUrl.trim()) {
+        messageDiv.className = 'message error';
+        messageDiv.textContent = '✗ All fields are required';
+        return;
+      }
+
       submitBtn.disabled = true;
       statusDiv.innerHTML = '<span class="spinner"></span>Building...';
       messageDiv.className = 'message';
+      detailsDiv.style.display = 'none';
 
       try {
         const response = await fetch('/api/build', {
@@ -201,15 +211,21 @@
 
         if (response.ok) {
           messageDiv.className = 'message success';
-          messageDiv.textContent = '✓ Build triggered successfully! Check your GitHub releases.';
+          messageDiv.textContent = '✓ Build triggered successfully! Your APK is being built...';
+          detailsDiv.innerHTML = `<strong>Build Details:</strong><br>App: ${data.appName}<br>Package: ${data.packageName}<br>URL: ${data.webUrl}<br><br>Check your GitHub releases in <strong>mellowgameshere/pwa-native-shell</strong> for the completed APK.`;
+          detailsDiv.style.display = 'block';
           form.reset();
         } else {
           messageDiv.className = 'message error';
-          messageDiv.textContent = '✗ Error: ' + (data.message || 'Failed to trigger build');
+          messageDiv.textContent = '✗ Build trigger failed';
+          detailsDiv.innerHTML = `<strong>Error:</strong><br>${data.message || 'Unknown error'}<br><br><strong>Troubleshooting:</strong><br>• Verify GITHUB_TOKEN is set with repo and workflow permissions<br>• Ensure pwa-native-shell has the build workflow configured<br>• Check that the token has access to mellowgameshere/pwa-native-shell`;
+          detailsDiv.style.display = 'block';
         }
       } catch (error) {
         messageDiv.className = 'message error';
-        messageDiv.textContent = '✗ Connection error: ' + error.message;
+        messageDiv.textContent = '✗ Connection error';
+        detailsDiv.innerHTML = `<strong>Error:</strong><br>${error.message}<br><br><strong>Troubleshooting:</strong><br>• Check your internet connection<br>• Verify the API endpoint is reachable<br>• Check browser console for more details`;
+        detailsDiv.style.display = 'block';
       } finally {
         submitBtn.disabled = false;
         statusDiv.innerHTML = '';

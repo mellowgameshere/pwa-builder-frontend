@@ -41,11 +41,29 @@ app.post('/api/build', async (req, res) => {
     console.log('GitHub API response status:', response.status);
 
     if (response.ok) {
-      res.status(200).json({ message: 'Build triggered successfully' });
+      console.log('Build triggered successfully for:', appName);
+      res.status(200).json({ 
+        message: 'Build triggered successfully',
+        appName,
+        packageName,
+        webUrl
+      });
     } else {
       const errorText = await response.text();
-      console.error('GitHub API error:', errorText);
-      res.status(500).json({ message: 'Failed to trigger build', details: errorText });
+      console.error('GitHub API error:', response.status, errorText);
+      const errorMessage = response.status === 401 
+        ? 'Authentication failed: Invalid GITHUB_TOKEN'
+        : response.status === 404
+        ? 'Repository not found. Verify pwa-native-shell exists and GITHUB_TOKEN has access'
+        : response.status === 422
+        ? 'Repository dispatch trigger failed. Ensure pwa-native-shell has a build workflow'
+        : `Build trigger failed with status ${response.status}`;
+      
+      res.status(500).json({ 
+        message: errorMessage,
+        status: response.status,
+        details: errorText 
+      });
     }
   } catch (error) {
     console.error('Build request error:', error);
